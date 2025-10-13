@@ -56,9 +56,9 @@ Pipeline opiera się na koncepcji **Medallion Architecture (Lakehouse)**, obejmu
 ```text
 Kaggle API → [download_netflix_dag] → GCS Raw (CSV)
                           ↓
-        GCS Raw → [netflix_etl_dag + Spark] → GCS Processed (Parquet)
+GCS Raw → [netflix_etl_dag + Spark] → GCS Processed (Parquet)
                           ↓
-        GCS Processed → [load_to_bq_dag] → BigQuery Warehouse
+GCS Processed → [load_to_bq_dag] → BigQuery Warehouse
 ```
 
 ---
@@ -136,13 +136,15 @@ airflow-and-spark-pipeline/
 
 # ⚡ Quick Start (Lokalne uruchomienie)
 
+---
+
 ## 🧩 Wymagania
 
-### Środowisko
+**### Środowisko**
 **WSL2 + Docker Desktop** (lub Linux/Mac)
 
 ### Java 17  
-Dla `SparkSubmitOperator` i testów:
+**Dla `SparkSubmitOperator` i testów:**
 
 ```bash
 sudo apt install openjdk-17-jre-headless -y
@@ -164,8 +166,8 @@ pip install -r airflow/requirements.txt  # kaggle, pyspark, providers
 ### 1. Włącz wymagane API
 ```bash
 gcloud services enable storage.googleapis.com \
-    bigquery.googleapis.com \
-    iam.googleapis.com
+bigquery.googleapis.com \
+iam.googleapis.com
 ```
 ### 2. Utwórz buckety w Cloud Storage
 ```bash
@@ -176,15 +178,15 @@ gsutil mb -l europe-central2 gs://airflow-and-spark-pipeline-temp/
 ### 3. Utwórz Service Account i przypisz role
 ```bash
 gcloud iam service-accounts create airflow-spark-sa \
-    --display-name "Airflow and Spark Service Account"
+--display-name "Airflow and Spark Service Account"
 
 gcloud projects add-iam-policy-binding <YOUR_PROJECT_ID> \
-    --member="serviceAccount:airflow-spark-sa@<YOUR_PROJECT_ID>.iam.gserviceaccount.com" \
-    --role="roles/storage.objectAdmin"
+--member="serviceAccount:airflow-spark-sa@<YOUR_PROJECT_ID>.iam.gserviceaccount.com" \
+--role="roles/storage.objectAdmin"
 
 gcloud projects add-iam-policy-binding <YOUR_PROJECT_ID> \
-    --member="serviceAccount:airflow-spark-sa@<YOUR_PROJECT_ID>.iam.gserviceaccount.com" \
-    --role="roles/bigquery.jobUser"
+--member="serviceAccount:airflow-spark-sa@<YOUR_PROJECT_ID>.iam.gserviceaccount.com" \
+--role="roles/bigquery.jobUser"
 ```
 💡 Alternatywnie: możesz użyć uproszczonej roli:
 ```bash
@@ -193,12 +195,12 @@ gcloud projects add-iam-policy-binding <YOUR_PROJECT_ID> \
 ### 4. Pobierz klucz i zapisz w katalogu airflow/
 ```bash
 gcloud iam service-accounts keys create airflow/gcp-key.json \
-    --iam-account=airflow-spark-sa@<YOUR_PROJECT_ID>.iam.gserviceaccount.com
+--iam-account=airflow-spark-sa@<YOUR_PROJECT_ID>.iam.gserviceaccount.com
 ```
 ### 5. Utwórz dataset w BigQuery
 ```bash
 bq --location=europe-central2 mk \
-    --dataset <YOUR_PROJECT_ID>:airflow-and-spark-pipeline
+--dataset <YOUR_PROJECT_ID>:airflow-and-spark-pipeline
 ```
 ✅ Po wykonaniu powyższych kroków:
 
@@ -261,6 +263,8 @@ W panelu **Admin → Connections** należy dodać poniższe połączenia:
 
 - Sprawdź dane w bucketach GCS i tabelach BigQuery.
 
+---
+
 ## 🧪 Testy
 
 Uruchom wszystkie testy:
@@ -279,6 +283,8 @@ pytest tests/test_dags.py -v
 - test_dags.py – sprawdza import DAG-ów i zależności (np. master → sub-DAG-i).
 
 - test_netflix_etl.py – symuluje działanie Sparka (dropna, dedup, trim) z mock danymi.
+
+---
 
 ## ✅ Gotowe!
 
@@ -312,6 +318,7 @@ pytest tests/test_dags.py -v
 Projekt przygotowany w celach edukacyjnych i demonstracyjnych.
 Możesz mnie znaleźć na GitHubie: [tomsongracz](https://github.com/tomsongracz)
   
+
 
 
 

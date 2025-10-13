@@ -136,10 +136,10 @@ airflow-and-spark-pipeline/
 
 ## 🧩 Wymagania
 
-### Środowisko
+### Środowisko:
 **WSL2 + Docker Desktop** (lub Linux/Mac)
 
-### Java 17  
+### Java 17:  
 **Dla `SparkSubmitOperator` i testów:**
 
 ```bash
@@ -314,6 +314,7 @@ pytest tests/test_dags.py -v
 Projekt przygotowany w celach edukacyjnych i demonstracyjnych.
 Możesz mnie znaleźć na GitHubie: [tomsongracz](https://github.com/tomsongracz)
   
+
 
 
 

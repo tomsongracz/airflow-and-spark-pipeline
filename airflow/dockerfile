@@ -1,0 +1,22 @@
+FROM apache/airflow:2.8.1
+
+# Przełącz na root, aby zainstalować wymagane pakiety systemowe
+USER root
+
+# Instalacja Javy (wymagana przez SparkSubmitOperator)
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends openjdk-17-jre-headless && \
+    rm -rf /var/lib/apt/lists/*
+
+# Skopiuj plik z zależnościami i GCS connector
+COPY requirements.txt /tmp/requirements.txt
+COPY gcs-connector.jar /opt/airflow/jars/
+
+# Wróć do użytkownika airflow
+USER airflow
+
+# Instalacja zależności Pythona
+RUN pip install --no-cache-dir -r /tmp/requirements.txt
+
+# Ustaw zmienną środowiskową dla Sparka
+ENV SPARK_CLASSPATH=/opt/airflow/jars/gcs-connector.jar

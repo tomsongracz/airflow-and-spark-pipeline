@@ -1,0 +1,105 @@
+# =====================================================
+# GitHub Actions Workflow: CI (Continuous Integration)
+# =====================================================
+# Ten plik definiuje pipeline CI/CD dla projektu airflow-and-spark-pipeline.
+# Uruchamia się automatycznie na push/pull request do gałęzi 'main'.
+# Etapy:
+# 1. Testy Python (DAG-i i ETL Spark) – sprawdzają poprawność kodu.
+# 2. Linting (Black + Flake8) – sprawdza styl i jakość kodu (z ignorowaniem długich linii E501).
+# 3. Budowa obrazów Docker (Airflow + Spark) – weryfikuje, czy obrazy budują się bez błędów.
+#
+# Plik należy umieścić w folderze: .github/workflows/ci.yaml
+# Wymagania: GitHub repo z włączonymi Actions (domyślnie włączone).
+# =====================================================
+
+name: CI
+
+on:
+  # Wyzwalacze: push do main lub pull request do main
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  # Job 1: Uruchomienie testów Python (DAG-i i ETL)
+  test:
+    runs-on: ubuntu-latest  # Środowisko: Ubuntu (standardowe dla CI)
+
+    steps:
+    # Krok 1: Checkout kodu z repozytorium
+    - uses: actions/checkout@v4
+
+    # Krok 2: Konfiguracja Pythona 3.12 (pasuje do wymagań projektu)
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    # Krok 3: Konfiguracja Javy 17 (wymagana przez Spark i Airflow)
+    - name: Set up Java 17
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'  # Dystrybucja OpenJDK (Temurin)
+        java-version: '17'
+
+    # Krok 4: Instalacja zależności systemowych i Pythona
+    - name: Install dependencies
+      run: |
+        # Aktualizacja pakietów systemowych i instalacja Javy (lokalnie w CI)
+        sudo apt-get update
+        sudo apt-get install -y openjdk-17-jre-headless
+        # Ustawienie zmiennej JAVA_HOME (ścieżka w środowisku GitHub Actions)
+        export JAVA_HOME=/opt/hostedtoolcache/Java_Temurin-17_*/x64
+        # Instalacja Airflow, pytest i zależności z requirements.txt
+        pip install apache-airflow==2.8.1 pytest
+        pip install -r airflow/requirements.txt
+        # Dodatkowe: Black i Flake8 do lintingu
+        pip install black flake8
+
+    # Krok 5: Linting (sprawdzenie stylu kodu)
+    - name: Lint code
+      run: |
+        # Black: check format (fail if not formatted)
+        black . --line-length=79 --check
+        # Flake8: check style (ignoruje E501 - długie linie, bo to kosmetyka)
+        flake8 . --ignore=E501
+
+    # Krok 6: Uruchomienie testów za pomocą Makefile
+    - name: Run tests
+      env:
+        JAVA_HOME: /opt/hostedtoolcache/Java_Temurin-17_*/x64  # Eksport Javy dla testów Spark
+      run: |
+        # Uruchomienie testów ETL i DAG-ów (sekwencyjnie)
+        make test
+
+  # Job 2: Budowa obrazów Docker (tylko po udanych testach)
+  build-docker:
+    runs-on: ubuntu-latest
+    needs: test  # Zależność: uruchamia się tylko jeśli 'test' przeszedł pomyślnie
+
+    steps:
+    # Krok 1: Checkout kodu
+    - uses: actions/checkout@v4
+
+    # Krok 2: Konfiguracja Docker Buildx (wsparcie dla budowania multi-platform)
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    # Krok 3: Budowa obrazu Docker dla Airflow
+    - name: Build Airflow Docker image
+      run: |
+        cd airflow  # Przejście do katalogu Airflow
+        docker build -t airflow-custom:latest .  # Budowa z lokalnego Dockerfile
+
+    # Krok 4: Budowa obrazu Docker dla Spark
+    - name: Build Spark Docker image
+      run: |
+        cd spark  # Przejście do katalogu Spark
+        docker build -t spark-custom:latest .  # Budowa z lokalnego Dockerfile
+
+    # Krok 5: Podstawowa weryfikacja (bez uruchamiania kontenerów – oszczędność zasobów CI)
+    - name: Test Docker images
+      run: |
+        # Potwierdzenie, że obrazy zostały zbudowane bez błędów
+        echo "Docker images built successfully"

@@ -1,0 +1,27 @@
+# Bazujemy na oficjalnym obrazie Apache Spark
+FROM apache/spark:3.5.3
+
+# Przełączamy się na roota, żeby móc instalować paczki systemowe
+USER root
+
+# Instalujemy Python3 + pip
+RUN apt-get update && apt-get install -y python3 python3-pip wget && rm -rf /var/lib/apt/lists/*
+
+# Ustawiamy alias, ale tylko jeśli nie istnieje
+RUN [ ! -f /usr/bin/python ] && ln -s /usr/bin/python3 /usr/bin/python || true && \
+    [ ! -f /usr/bin/pip ] && ln -s /usr/bin/pip3 /usr/bin/pip || true
+
+# Pobieramy i kopiujemy GCS Connector JAR do classpath Spark
+RUN wget -q https://storage.googleapis.com/hadoop-lib/gcs/gcs-connector-hadoop3-2.2.0.jar -O /tmp/gcs-connector.jar && \
+    mkdir -p /opt/spark/jars && \
+    cp /tmp/gcs-connector.jar /opt/spark/jars/ && \
+    rm /tmp/gcs-connector.jar
+
+# Instalujemy potrzebne biblioteki Pythona (bez pyspark – bundled)
+RUN pip install --no-cache-dir \
+    pandas \
+    google-cloud-storage \
+    delta-spark==3.2.0  # Match Spark 3.5
+
+# (opcjonalnie) wracamy do użytkownika spark
+USER spark

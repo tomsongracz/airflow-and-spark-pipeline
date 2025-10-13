@@ -1,0 +1,132 @@
+# -----------------------
+# System / IDE / Editor
+# -----------------------
+.DS_Store
+Icon?
+Thumbs.db
+desktop.ini
+
+# VSCode / IntelliJ
+.vscode/
+.idea/
+*.iml
+
+# -----------------------
+# Python
+# -----------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+.eggs/
+dist/
+build/
+pip-wheel-metadata/
+venv/
+.venv/
+env/
+ENV/
+.env
+.env.*
+.python-version
+.mypy_cache/
+.pytest_cache/
+coverage/
+.coverage
+
+# -----------------------
+# Logs / runtime / temp
+# -----------------------
+*.log
+logs/
+**/logs/
+tmp/
+temp/
+**/temp/
+airflow/logs/
+airflow/temp/
+spark/data/
+
+# -----------------------
+# Docker
+# -----------------------
+# Lokalne override’y i pliki środowiskowe
+docker-compose.override.yml
+docker-compose.*.local.yml
+*.docker-compose.override.yml
+*.env
+docker-compose.*.yml.backup
+**/docker-compose.override.yml
+docker-compose.*.env
+.dockerenv
+
+# Docker build / runtime artifacts
+**/.docker
+**/.dockerignore
+
+# -----------------------
+# Secrets / Keys / Credentials (ważne)
+# -----------------------
+# Jawne klucze GCP / Kaggle - nigdy nie trzymać w repo
+**/gcp-key.json
+**/kaggle-key.json
+**/kaggle.json
+**/*-key.json
+**/*_key.json
+**/credentials
+**/aws_credentials
+credentials
+**/gcs-connector.jar  # Dodane: connector JAR z airflow/
+
+# -----------------------
+# Airflow / DB / local state
+# -----------------------
+airflow/airflow.db
+airflow/unittests.log
+airflow/worker*
+airflow/.local
+airflow/.env*
+airflow/*.cfg  # Dodane: configi Airflow
+
+# -----------------------
+# Spark / build artifacts
+# -----------------------
+*.class
+*.jar
+*.log
+spark/*.log
+spark/*.tmp
+
+# -----------------------
+# Tests / coverage / reports
+# -----------------------
+htmlcov/
+report/
+test-reports/
+
+# -----------------------
+# Misc / tooling
+# -----------------------
+*.swp
+*.swo
+*.bak
+*.tmp
+*.orig
+
+# -----------------------
+# Dane — lokalne kopie i pliki surowe
+# -----------------------
+# Ignorujemy wszystkie pliki danych, aby żadne dane testowe / prywatne nie trafiły do repo
+**/*.csv
+**/*.zip
+**/*.parquet
+**/*.avro
+**/*.jsonl
+**/*.feather
+**/*.xls
+**/*.xlsx
+**/*.sav
+**/*.pkl
+**/*.npy
+**/*.npz

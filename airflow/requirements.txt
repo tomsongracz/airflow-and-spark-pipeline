@@ -1,0 +1,14 @@
+# Klient do komunikacji z API Kaggle – używany w DAG-ach do automatycznego pobierania danych (np. zbioru Netflix)
+kaggle==1.6.14
+
+# Oficjalna biblioteka Google do obsługi Google Cloud Storage (GCS) – potrzebna do zapisu/odczytu plików z bucketa w DAG-ach i Spark
+google-cloud-storage==2.16.0
+
+# Provider Airflow dla Apache Spark – dodaje operator SparkSubmitOperator, którego używamy do uruchamiania jobów Spark z poziomu DAG-a
+apache-airflow-providers-apache-spark==4.0.0
+
+# Silnik Apache Spark dla Pythona – niezbędny, jeśli chcesz testować kod Spark lokalnie albo wykonywać transformacje danych w samym Airflow (np. w notebookach / debugowaniu)
+pyspark==3.5.3
+
+# Provider Airflow dla usług Google Cloud – wymagany m.in. przez GCSToBigQueryOperator i inne operatory integrujące Airflow z GCP
+apache-airflow-providers-google==10.17.0

@@ -1,0 +1,51 @@
+version: "3.8"  # Wersja formatu docker-compose – 3.8 obsługuje wszystkie potrzebne funkcje dla Docker Swarm i lokalnego dev
+
+services:
+  # Usługa: Spark Master
+  spark-master:
+    build:
+      context: .               # Buduje obraz z bieżącego katalogu (gdzie znajduje się Dockerfile)
+      dockerfile: Dockerfile   # Dockerfile do budowy obrazu Sparka
+    container_name: spark-master  # Nazwa kontenera – ułatwia debugowanie i sieciowanie
+    hostname: spark-master         # Nazwa hosta w sieci Docker – potrzebna dla workerów do połączenia z masterem
+    environment:
+      - PYSPARK_PYTHON=python3            # Ustawienie interpretera Pythona dla executora
+      - PYSPARK_DRIVER_PYTHON=python3     # Ustawienie interpretera Pythona dla drivera
+      - GOOGLE_APPLICATION_CREDENTIALS=/opt/spark/gcp/gcp-key.json  # Ścieżka do klucza GCP – potrzebna do uwierzytelnienia w GCS
+    ports:
+      - "8081:8080"   # Mapowanie portu Spark Master Web UI (domyślnie 8080 -> dostępne lokalnie pod 8081)
+      - "7077:7077"   # Port Spark Master do komunikacji z workerami
+    volumes:
+      - ./apps:/opt/spark-apps   # Montuje katalog z aplikacjami Spark (np. pliki .py)
+      - ./data:/opt/spark-data   # Montuje katalog z danymi wejściowymi/wyjściowymi
+      - ../airflow/gcp-key.json:/opt/spark/gcp/gcp-key.json:ro  # Montuje plik klucza GCP w trybie tylko do odczytu
+    command: ["/opt/spark/bin/spark-class", "org.apache.spark.deploy.master.Master", "--host", "spark-master"]  
+    # Polecenie startowe uruchamiające proces Spark Master (ze wskazaniem hosta)
+
+  # Usługa: Spark Worker
+  spark-worker:
+    build:
+      context: .               # Buduje obraz z tego samego Dockerfile co master (może być wspólny)
+      dockerfile: Dockerfile
+    container_name: spark-worker   # Nazwa kontenera workera
+    hostname: spark-worker         # Hostname widoczny w sieci – ułatwia debugowanie i logowanie
+    environment:
+      - PYSPARK_PYTHON=python3            # Interpreter Pythona dla zadań workerów
+      - PYSPARK_DRIVER_PYTHON=python3     # Interpreter Pythona dla drivera (w workerze)
+      - GOOGLE_APPLICATION_CREDENTIALS=/opt/spark/gcp/gcp-key.json  # Klucz GCP również tutaj – worker może potrzebować dostępu do GCS
+    depends_on:
+      - spark-master   # Worker uruchomi się dopiero po starcie mastera
+    ports:
+      - "8082:8081"   # Mapowanie portu Spark Worker Web UI (domyślnie 8081 -> dostępne lokalnie pod 8082)
+    volumes:
+      - ./apps:/opt/spark-apps   # Montowanie aplikacji Spark – musi być spójne z masterem
+      - ./data:/opt/spark-data   # Montowanie danych – worker potrzebuje dostępu do tych samych plików
+      - ../airflow/gcp-key.json:/opt/spark/gcp/gcp-key.json:ro  # Klucz GCP dla workerów
+    command: ["/opt/spark/bin/spark-class", "org.apache.spark.deploy.worker.Worker", "spark://spark-master:7077"]  
+    # Uruchamia proces workera, który łączy się z masterem pod wskazanym adresem
+
+# Sieć Docker – wspólna z Airflow
+networks:
+  default:
+    external: true               # Używamy zewnętrznej sieci Docker
+    name: airflow-spark-network  # Nazwa sieci – musi odpowiadać nazwie sieci zdefiniowanej w docker-compose Airflow

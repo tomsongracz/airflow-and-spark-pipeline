@@ -1,0 +1,139 @@
+services:
+  # Postgres – baza danych dla Airflow
+  # Przechowuje metadane: definicje DAG-ów, historię tasków, logi, zmienne itp.
+  postgres:
+    image: postgres:13
+    container_name: airflow-postgres
+    environment:
+      POSTGRES_USER: airflow               # użytkownik bazy danych
+      POSTGRES_PASSWORD: airflow           # hasło do bazy
+      POSTGRES_DB: airflow                 # nazwa bazy danych
+    volumes:
+      - postgres_data:/var/lib/postgresql/data  # trwały storage na dane bazy
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U airflow"]  # sprawdza gotowość bazy
+      interval: 5s
+      retries: 5
+
+  # Redis – broker komunikacji Celery
+  # Kolejkuje zadania pomiędzy schedulerem a workerami
+  redis:
+    image: redis:latest
+    container_name: airflow-redis
+    ports:
+      - "6379:6379"  # port Redis (domyślny)
+
+  # Scheduler – planuje, uruchamia i kontroluje wykonywanie DAG-ów
+  scheduler:
+    build: .                              # buduje obraz z lokalnego Dockerfile
+    image: airflow-custom:latest
+    container_name: airflow-scheduler
+    restart: always
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      AIRFLOW__CORE__EXECUTOR: CeleryExecutor                         # używamy Celery jako backendu wykonywania zadań
+      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow  # połączenie z bazą
+      AIRFLOW__CELERY__BROKER_URL: redis://redis:6379/0              # broker Celery (Redis)
+      AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@postgres/airflow       # backend wyników Celery
+      AIRFLOW__CORE__LOAD_EXAMPLES: 'False'                          # wyłącza przykładowe DAG-i
+      GOOGLE_APPLICATION_CREDENTIALS: /opt/airflow/gcp/gcp-key.json  # ścieżka do klucza GCP (dla DAG-ów korzystających z GCS)
+      KAGGLE_CONFIG_DIR: /opt/airflow                                # lokalizacja pliku konfiguracyjnego Kaggle API (zmieniona)
+    volumes:
+      - ./dags:/opt/airflow/dags                                     # katalog z DAG-ami
+      - ./logs:/opt/airflow/logs                                     # katalog z logami Airflow
+      - ./temp:/opt/airflow/temp                                     # katalog tymczasowy na dane
+      - ./gcp-key.json:/opt/airflow/gcp/gcp-key.json:ro              # montowanie klucza GCP
+      - ./kaggle-key.json:/opt/airflow/kaggle.json:ro                # montowanie klucza Kaggle (zmieniona ścieżka)
+      - ./requirements.txt:/requirements.txt                         # lista zależności (może być używana przy buildzie)
+      - ../spark/apps:/opt/spark-apps                                # dostęp do aplikacji Spark uruchamianych z DAG-a
+    command: ["airflow", "scheduler"]                                # polecenie uruchamiające scheduler
+
+  # Webserver – panel WWW Airflow
+  # Pozwala zarządzać DAG-ami przez przeglądarkę
+  webserver:
+    build: .
+    image: airflow-custom:latest
+    container_name: airflow-webserver
+    restart: always
+    depends_on:
+      - scheduler
+    environment:
+      AIRFLOW__CORE__EXECUTOR: CeleryExecutor
+      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+      AIRFLOW__CELERY__BROKER_URL: redis://redis:6379/0
+      AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@postgres/airflow
+      AIRFLOW__CORE__LOAD_EXAMPLES: 'False'
+      GOOGLE_APPLICATION_CREDENTIALS: /opt/airflow/gcp/gcp-key.json
+      KAGGLE_CONFIG_DIR: /opt/airflow
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+      - ./temp:/opt/airflow/temp
+      - ./gcp-key.json:/opt/airflow/gcp/gcp-key.json:ro
+      - ./kaggle-key.json:/opt/airflow/kaggle.json:ro
+      - ./requirements.txt:/requirements.txt
+      - ../spark/apps:/opt/spark-apps
+    ports:
+      - "8080:8080"  # panel WWW dostępny lokalnie na porcie 8080
+    command: ["airflow", "webserver"]
+
+  # Worker – wykonuje zadania wysyłane przez scheduler
+  worker:
+    build: .
+    image: airflow-custom:latest
+    container_name: airflow-worker
+    restart: always
+    depends_on:
+      - scheduler
+      - redis
+      - postgres
+    environment:
+      AIRFLOW__CORE__EXECUTOR: CeleryExecutor
+      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+      AIRFLOW__CELERY__BROKER_URL: redis://redis:6379/0
+      AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@postgres/airflow
+      GOOGLE_APPLICATION_CREDENTIALS: /opt/airflow/gcp/gcp-key.json
+      KAGGLE_CONFIG_DIR: /opt/airflow
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+      - ./temp:/opt/airflow/temp
+      - ./gcp-key.json:/opt/airflow/gcp/gcp-key.json:ro
+      - ./kaggle-key.json:/opt/airflow/kaggle.json:ro
+      - ./requirements.txt:/requirements.txt
+      - ../spark/apps:/opt/spark-apps
+    command: ["airflow", "celery", "worker"]
+
+  # Init – kontener jednorazowy do inicjalizacji bazy danych
+  # Tworzy tabele metadanych i konto administratora
+  init:
+    build: .
+    image: airflow-custom:latest
+    container_name: airflow-init
+    depends_on:
+      - postgres
+    environment:
+      AIRFLOW__CORE__EXECUTOR: CeleryExecutor
+      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+      _AIRFLOW_WWW_USER_CREATE: 'true'    # automatyczne utworzenie użytkownika admin
+      _AIRFLOW_WWW_USER_USERNAME: admin
+      _AIRFLOW_WWW_USER_PASSWORD: admin
+      KAGGLE_CONFIG_DIR: /opt/airflow
+    volumes:
+      - ./temp:/opt/airflow/temp
+      - ./gcp-key.json:/opt/airflow/gcp/gcp-key.json:ro
+      - ./kaggle-key.json:/opt/airflow/kaggle.json:ro
+    command: ["airflow", "db", "init"]   # inicjalizacja bazy danych Airflow
+
+# Volumes – trwałe przechowywanie danych bazy Postgres
+volumes:
+  postgres_data:
+
+# Sieć – wspólna z klastrem Spark
+# Umożliwia komunikację Airflow ↔ Spark (np. SparkSubmitOperator)
+networks:
+  default:
+    external: true
+    name: airflow-spark-network

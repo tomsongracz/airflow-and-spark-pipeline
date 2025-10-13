@@ -134,7 +134,7 @@ airflow-and-spark-pipeline/
 
 ---
 
-# ⚡ Quick Start (Lokalne uruchomienie)
+## ⚡ Quick Start (Lokalne uruchomienie)
 
 ---
 
@@ -318,6 +318,7 @@ pytest tests/test_dags.py -v
 Projekt przygotowany w celach edukacyjnych i demonstracyjnych.
 Możesz mnie znaleźć na GitHubie: [tomsongracz](https://github.com/tomsongracz)
   
+
 
 
 

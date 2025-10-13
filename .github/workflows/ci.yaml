@@ -46,11 +46,6 @@ jobs:
     # Krok 4: Instalacja zależności systemowych i Pythona
     - name: Install dependencies
       run: |
-        # Aktualizacja pakietów systemowych i instalacja Javy (lokalnie w CI)
-        sudo apt-get update
-        sudo apt-get install -y openjdk-17-jre-headless
-        # Ustawienie zmiennej JAVA_HOME (stabilna ścieżka w GitHub Actions)
-        echo "JAVA_HOME=/opt/hostedtoolcache/Java_Temurin-17_*/x64" >> $GITHUB_ENV
         # Instalacja Airflow, pytest i zależności z requirements.txt
         pip install apache-airflow==2.8.1 pytest
         pip install -r airflow/requirements.txt

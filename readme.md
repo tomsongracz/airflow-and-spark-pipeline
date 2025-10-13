@@ -24,6 +24,7 @@ Projekt demonstruje pełny cykl ETL na danych Netflix z Kaggle — od pobrania, 
 ## 🚀 Opis projektu
 
 Codzienny pipeline orkiestrowany przez **Apache Airflow** pobiera surowe dane (CSV z **Kaggle**, ok. 1GB+), przetwarza je w **Apache Spark**, a następnie ładuje do **BigQuery**.  
+
 Proces składa się z czterech głównych **DAG-ów**:
 
 - **`download_netflix_dag`** — pobiera i rozpakowuje dataset z Kaggle, uploaduje plik CSV do **Raw Zone** w **GCS**.  
@@ -32,6 +33,7 @@ Proces składa się z czterech głównych **DAG-ów**:
 - **`master_netflix_pipeline`** — nadrzędny DAG, który sekwencyjnie uruchamia powyższe sub-DAG-i (**download → ETL → load**) zgodnie z harmonogramem codziennym o **12:00 (czas polski)**.
 
 Projekt został zrealizowany **lokalnie w Dockerze** (Airflow + Spark), symulując architekturę **Data Lakehouse** w **Google Cloud Platform (GCP)**.  
+
 W środowisku produkcyjnym **Airflow** mógłby działać w **Cloud Composer**, a **Spark** w **Dataproc Serverless** — pipeline wykorzystuje te same koncepcje orkiestracji, przetwarzania oraz warstw danych (**Raw → Processed → Warehouse**).
 
 ---
@@ -314,6 +316,7 @@ pytest tests/test_dags.py -v
 Projekt przygotowany w celach edukacyjnych i demonstracyjnych.
 Możesz mnie znaleźć na GitHubie: [tomsongracz](https://github.com/tomsongracz)
   
+
 
 
 

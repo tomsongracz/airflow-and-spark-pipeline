@@ -15,7 +15,7 @@ if __name__ == "__main__":
     )
     print(f"Wczytano {df.count()} wierszy z GCS")  # Debug: liczba wierszy
 
-    # === 2. Proste czyszczenie / transformacja ===
+    # === 2. Czyszczenie i transformacja ===
     # - Usuń wiersze z jakimikolwiek NULL w kolumnach
     # - Rzutowanie release_year na int
     # - Przytnij spacje wokół tekstów i ujednolić case dla tytułu (pomaga w deduplikacji)

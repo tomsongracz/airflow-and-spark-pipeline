@@ -22,6 +22,7 @@ DESTINATION_BLOB = "netflix/netflix_titles.csv"
 
 # --- FUNKCJE WYKONYWANE W TASKACH ---
 
+
 def download_from_kaggle(**context):
     """
     Pobiera najnowszy dataset Netflix z Kaggle do katalogu LOCAL_DIR.

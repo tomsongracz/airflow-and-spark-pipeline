@@ -1,7 +1,7 @@
-# Airflow and Spark ETL Pipeline on GCS Lakehouse
+# Airflow and Spark ELT Pipeline on GCS Lakehouse
 
 Pipeline danych z orkiestracją w **Apache Airflow**, przetwarzaniem w **Apache Spark** i architekturą **Data Lakehouse** w **Google Cloud Platform (GCS + BigQuery)**. 
-Projekt demonstruje pełny cykl ETL na danych Netflix z Kaggle — od pobrania, przez czyszczenie i deduplikację w **Spark**, po załadowanie danych do **BigQuery**.
+Projekt demonstruje pełny cykl ELT na danych Netflix z Kaggle — od pobrania, przez czyszczenie i deduplikację w **Spark**, po załadowanie danych do **BigQuery**.
 
 ---
 
@@ -319,6 +319,7 @@ pytest tests/test_dags.py -v
 Projekt przygotowany w celach edukacyjnych i demonstracyjnych.
 Możesz mnie znaleźć na GitHubie: [tomsongracz](https://github.com/tomsongracz)
   
+
 
 
 
